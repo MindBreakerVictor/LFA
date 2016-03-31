@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{ABB0C811-D0FE-49E4-9172-6D0EFC177B02}</ProjectGuid>
     <RootNamespace>LFA</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.10586.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -110,12 +110,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="DFA.h" />
+    <ClInclude Include="DeterministicFiniteAutomata.h" />
+    <ClInclude Include="FiniteAutomata.h" />
+    <ClInclude Include="NedeterministicFiniteAutomata.h" />
     <ClInclude Include="PCH.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="DFA.cpp" />
+    <ClCompile Include="DeterministicFiniteAutomata.cpp" />
+    <ClCompile Include="FiniteAutomata.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="NedeterministicFiniteAutomata.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

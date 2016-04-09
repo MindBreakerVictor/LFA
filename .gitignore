@@ -1,7 +1,5 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
-
-/.vs/LFA/v14
+﻿/.vs
 /Debug
-/LFA/Debug
+/FiniteAutomatas/Debug
+/ipch
+/.vs

@@ -13,9 +13,9 @@ class NondeterministicFiniteAutomata : public FiniteAutomata
 		NondeterministicFiniteAutomata(const uint32_t& states, const uint32_t& initialState, const Vector<uint32_t>& finalStates,
 			const TransitionMap& transitionFunction) : FiniteAutomata(states, initialState, finalStates, transitionFunction) { }
 
-		bool isAccepted(const String& word) const;
+		bool isAccepted(const String& word) const override;
 
-		String generateWord(const uint32_t& length) const;
+		String generateWord(const uint32_t& length) const override;
 
 		DFA ToDFA() const;
 

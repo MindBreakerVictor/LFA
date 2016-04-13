@@ -12,9 +12,9 @@ class DeterministicFiniteAutomata : public FiniteAutomata
 		DeterministicFiniteAutomata(const uint32_t& states, const uint32_t& initialState, const Vector<uint32_t>& finalStates, 
 			const TransitionMap& transitionFunction) : FiniteAutomata(states, initialState, finalStates, transitionFunction) { }
 
-		bool isAccepted(const String& word) const;
+		bool isAccepted(const String& word) const override;
 
-		String generateWord(const uint32_t& length) const;
+		String generateWord(const uint32_t& length) const override;
 
 	private:
 		bool generateWord(uint32_t currentState, uint32_t length, String& word) const;

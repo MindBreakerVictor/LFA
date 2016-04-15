@@ -16,6 +16,7 @@ class NondeterministicFiniteAutomata : public FiniteAutomata
 		bool isAccepted(const String& word) const override;
 
 		String generateWord(const uint32_t& length) const override;
+		String getRegularExpression() const override;
 
 		DFA ToDFA() const;
 

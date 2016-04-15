@@ -15,10 +15,6 @@
 #include <iterator>
 #include <algorithm>
 
-typedef std::string String;
-typedef std::map<std::pair<uint32_t, char>, std::vector<uint32_t>> TransitionMap;
-typedef std::pair<uint32_t, char> TransitionPair;
-
 template <class Type>
 using Vector = std::vector<Type>;
 
@@ -36,4 +32,11 @@ using Pair = std::pair<Type1, Type2>;
 
 template <class KeyType, class ValueType>
 using Map = std::map<KeyType, ValueType>;
+
+typedef std::string String;
+typedef Map<Pair<uint32_t, char>, Vector<uint32_t>> TransitionMap;
+typedef Pair<uint32_t, char> TransitionPair;
+
+Vector<Vector<String>> operator+(Vector<Vector<String>> const& vectorOne, Vector<Vector<String>> const& vectorTwo);
+Vector<Vector<String>>& operator+=(Vector<Vector<String>>& vectorOne, Vector<Vector<String>> const& vectorTwo);
 

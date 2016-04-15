@@ -68,6 +68,86 @@ String DeterministicFiniteAutomata::generateWord(const uint32_t& length) const
 	return word;	
 }
 
+String DeterministicFiniteAutomata::getRegularExpression() const
+{
+	if (!_states || _transitionFunction.empty() || _finalStates.empty())
+		return String();
+
+	Vector<Vector<String>> A(_states, Vector<String>(_states, ""));
+	Vector<Vector<String>> B(_states, Vector<String>(1, ""));
+
+	// Construct A
+	for (TransitionMap::const_iterator itr = _transitionFunction.begin(); itr != _transitionFunction.end(); itr++)
+		A[itr->first.first][itr->second.at(0)] = itr->first.second;
+
+	// Construct B 
+	for (uint32_t i = 0; i < _states; i++)
+		if (isFinalState(i))
+			B[i][0] = '0';
+	
+	for (int i = _states - 1; i >= 0; i--)
+	{
+		Vector<Vector<String>> _A(_states, Vector<String>(_states, ""));
+		Vector<Vector<String>> _B(_states, Vector<String>(1, ""));
+
+		// Lemma Arden
+		if (!A[i][i].empty())
+		{
+			if (!B[i][0].empty())
+			{
+				if (B[i][0] != "0")
+				{
+					// Avoid double paranthesis
+					if (A[i][i].size() > 1 && (*A[i][i].begin() != '(' && *A[i][i].rbegin() != ')'))
+						B[i][0] = "(" + A[i][i] + ")" + "*" + B[i][0];
+					else
+						B[i][0] = A[i][i] + "*" + B[i][0];
+				}
+				else
+				{
+					// Avoid double paranthesis
+					if (A[i][i].size() > 1 && (*A[i][i].begin() != '(' && *A[i][i].rbegin() != ')'))
+						B[i][0] = "(" + A[i][i] + ")" + "*";
+					else
+						B[i][0] = A[i][i] + "*";
+				}
+			}
+
+			for (uint32_t j = 0; j < _states - 1; j++)
+			{
+				// Avoid double paranthesis
+				if (A[i][i].size() > 1 && (*A[i][i].begin() != '(' && *A[i][i].rbegin() != ')'))
+					A[i][j] = "(" + A[i][i] + ")" + "*" + A[i][j];
+				else
+					A[i][j] = A[i][i] + "*" + A[i][j];
+			}
+
+			A[i][i] = "";
+		}
+
+		// Elimination
+		for (uint32_t j = 0; j < _states; j++)
+			if (!A[j][i].empty())
+				for (uint32_t k = 0; k < _states; k++)
+					if (!A[i][k].empty())
+						_A[j][k] = A[j][i] + A[i][k];
+		A += _A;
+
+		if (!B[i][0].empty())
+			for (uint32_t j = 0; j < _states; j++)
+				if (!A[j][i].empty())
+				{
+					if (B[i][0] != "0")
+						_B[j][0] = A[j][i] + B[i][0];
+					else
+						_B[j][0] = A[j][i];
+				}
+		B += _B;
+	}
+
+	return B[0][0];
+}
+
 bool DeterministicFiniteAutomata::generateWord(uint32_t currentState, uint32_t length, String& word) const
 {
 	if (!length && isFinalState(currentState))

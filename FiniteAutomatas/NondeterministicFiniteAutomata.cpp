@@ -59,6 +59,16 @@ String NondeterministicFiniteAutomata::generateWord(const uint32_t& length) cons
 	return word;
 }
 
+String NondeterministicFiniteAutomata::getRegularExpression() const
+{
+	if (!_states || _transitionFunction.empty() || _finalStates.empty())
+		return String();
+
+	String regx = ToDFA().getRegularExpression();
+
+	return regx;
+}
+
 DFA NondeterministicFiniteAutomata::ToDFA() const
 {
 	// We don't check for finalStates

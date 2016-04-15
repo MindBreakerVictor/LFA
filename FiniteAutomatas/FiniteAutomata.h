@@ -8,8 +8,9 @@ class FiniteAutomata
 		virtual bool isAccepted(const String& word) const = 0;
 
 		virtual String generateWord(const uint32_t& length) const = 0;
+		virtual String getRegularExpression() const = 0;
 
-		Vector<bool> getReachableStates() const;
+		virtual Vector<bool> getReachableStates() const final;
 
 	protected:
 		uint32_t _states;

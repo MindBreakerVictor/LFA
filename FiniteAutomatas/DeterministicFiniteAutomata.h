@@ -15,6 +15,7 @@ class DeterministicFiniteAutomata : public FiniteAutomata
 		bool isAccepted(const String& word) const override;
 
 		String generateWord(const uint32_t& length) const override;
+		String getRegularExpression() const override;
 
 	private:
 		bool generateWord(uint32_t currentState, uint32_t length, String& word) const;

@@ -1,9 +1,9 @@
 #include "PCH.h"
 #include "FiniteAutomata.h"
 
-Vector<bool> FiniteAutomata::getReachableStates() const
+Vector<bool> FiniteAutomata::GetReachableStates() const
 {
-	if (!_states)
+	if (!HasStates())
 		return Vector<bool>();
 
 	Stack<uint32_t> stack;
@@ -17,14 +17,13 @@ Vector<bool> FiniteAutomata::getReachableStates() const
 		uint32_t currentState = stack.top();
 		bool found = false;
 
-		TransitionMap::const_iterator itr;
-		for (itr = _transitionFunction.begin(); itr != _transitionFunction.end() && !found; itr++)
+		for (TransitionMapConstIterator itr = _transitionFunction.begin(); itr != _transitionFunction.end() && !found; ++itr)
 			if (itr->first.first == currentState)
-				for (Vector<uint32_t>::const_iterator _itr = itr->second.begin(); _itr != itr->second.end(); _itr++)
-					if (!visited[(*_itr)])
+				for (StatesConstIterator iter = itr->second.begin(); iter != itr->second.end(); ++iter)
+					if (!visited[(*iter)])
 					{
-						stack.push((*_itr));
-						visited[(*_itr)] = true;
+						stack.push((*iter));
+						visited[(*iter)] = true;
 						found = true;
 						break;
 					}
@@ -36,27 +35,25 @@ Vector<bool> FiniteAutomata::getReachableStates() const
 	return visited;
 }
 
-bool FiniteAutomata::isFinalState(const uint32_t& state) const
+bool FiniteAutomata::IsFinalState(uint32_t const& state) const
 {
-	if (state > _states - 1 || !_states || _finalStates.empty())
+	if (state > _states - 1 || !HasStates() || !HasFinalStates())
 		return false;
 
-	Vector<uint32_t>::const_iterator itr;
-	for (itr = _finalStates.begin(); itr != _finalStates.end(); itr++)
+	for (StatesConstIterator itr = _finalStates.begin(); itr != _finalStates.end(); ++itr)
 		if ((*itr) == state)
 			return true;
 
 	return false;
 }
 
-bool FiniteAutomata::isFinalState(const Set<uint32_t>& state) const
+bool FiniteAutomata::IsFinalState(StatesSet const& state) const
 {
-	if (!_states || _finalStates.empty() || state.empty())
+	if (!HasStates() || !HasFinalStates() || state.empty())
 		return false;
 
-	Set<uint32_t>::const_iterator itr;
-	for (itr = state.begin(); itr != state.end(); itr++)
-		if (isFinalState(*itr))
+	for (StatesSetConstIterator itr = state.begin(); itr != state.end(); ++itr)
+		if (IsFinalState(*itr))
 			return true;
 
 	return false;

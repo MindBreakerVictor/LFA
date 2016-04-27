@@ -1,25 +1,40 @@
-#pragma once
+#ifndef _DETERMINISTIC_FINITE_AUTOMATA_H
+#define _DETERMINISTIC_FINITE_AUTOMATA_H
 
 #include "PCH.h"
 #include "FiniteAutomata.h"
+#include "RegularExpression.h"
 
 class DeterministicFiniteAutomata : public FiniteAutomata
 {
 	public:
 		DeterministicFiniteAutomata() : FiniteAutomata() { }
 		DeterministicFiniteAutomata(std::ifstream& ifs);
-		DeterministicFiniteAutomata(const DeterministicFiniteAutomata& source) : FiniteAutomata(source) { }
-		DeterministicFiniteAutomata(const uint32_t& states, const uint32_t& initialState, const Vector<uint32_t>& finalStates, 
-			const TransitionMap& transitionFunction) : FiniteAutomata(states, initialState, finalStates, transitionFunction) { }
+		DeterministicFiniteAutomata(DeterministicFiniteAutomata const& source) : FiniteAutomata(source) { }
+		DeterministicFiniteAutomata(uint32_t const& states, uint32_t const& initialState, 
+			States const& finalStates, TransitionMap const& transitionFunction) : 
+			FiniteAutomata(states, initialState, finalStates, transitionFunction) { }
 
-		bool isAccepted(const String& word) const override;
+		bool IsAccepted(String const& word) const override;
 
-		String generateWord(const uint32_t& length) const override;
-		String getRegularExpression() const override;
+		String GenerateWord(uint32_t const& length) const override;
+		String GetRegularExpression() const override;
+
+		Vector<Vector<String>> GetCoefficientsMatrix() const;
+		Vector<Vector<String>> GetFreeTermsMatrix() const;
 
 	private:
-		bool generateWord(uint32_t currentState, uint32_t length, String& word) const;
+		bool GenerateWord(uint32_t const& currentState, uint32_t length, String* word) const;
+
+		// Used in GetRegularExpression
+		void ApplyArdensLemma(uint32_t const& index, 
+			Vector<Vector<String>>* coefficientsMatrix,	Vector<Vector<String>>* freeTermsMatrix) const;
+		void ApplyArdensLemma(String const& regex, String* freeTerm) const;
+		void EliminateState(uint32_t const& index, 
+			Vector<Vector<String>>* coefficientsMatrix,	Vector<Vector<String>>* freeTermsMatrix) const;
 };
 
 typedef DeterministicFiniteAutomata DFA;
+
+#endif
 

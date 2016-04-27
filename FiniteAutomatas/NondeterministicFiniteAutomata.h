@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _NONDETERMINISTIC_FINITE_AUTOMATA_H
+#define _NONDETERMINISTIC_FINITE_AUTOMATA_H
 
 #include "PCH.h"
 #include "FiniteAutomata.h"
@@ -9,26 +10,29 @@ class NondeterministicFiniteAutomata : public FiniteAutomata
 	public:
 		NondeterministicFiniteAutomata() : FiniteAutomata() { }
 		NondeterministicFiniteAutomata(std::ifstream& ifs);
-		NondeterministicFiniteAutomata(const NondeterministicFiniteAutomata& source) : FiniteAutomata(source) { }
-		NondeterministicFiniteAutomata(const uint32_t& states, const uint32_t& initialState, const Vector<uint32_t>& finalStates,
-			const TransitionMap& transitionFunction) : FiniteAutomata(states, initialState, finalStates, transitionFunction) { }
+		NondeterministicFiniteAutomata(NondeterministicFiniteAutomata const& source) : FiniteAutomata(source) { }
+		NondeterministicFiniteAutomata(uint32_t const& states, uint32_t const& initialState, 
+			Vector<uint32_t> const& finalStates, TransitionMap const& transitionFunction) : 
+			FiniteAutomata(states, initialState, finalStates, transitionFunction) { }
 
-		bool isAccepted(const String& word) const override;
+		bool IsAccepted(String const& word) const override;
 
-		String generateWord(const uint32_t& length) const override;
-		String getRegularExpression() const override;
+		String GenerateWord(uint32_t const& length) const override;
+		String GetRegularExpression() const override;
 
 		DFA ToDFA() const;
 
 	private:
-		Set<uint32_t> lambdaClosure(const uint32_t& state) const;
-		Set<uint32_t> lambdaClosure(const Set<uint32_t>& states) const;
+		StatesSet LambdaClosure(uint32_t const& state) const;
+		StatesSet LambdaClosure(StatesSet const& states) const;
 
-		Set<uint32_t> moveTo(const uint32_t& state, const char& key) const;
-		Set<uint32_t> moveTo(const Set<uint32_t>& states, const char& key) const;
+		StatesSet MoveTo(uint32_t const& state, char const& key) const;
+		StatesSet MoveTo(StatesSet const& states, char const& key) const;
 
-		Set<char> getAlphabet() const;
+		Set<char> GetAlphabet() const;
 };
 
 typedef NondeterministicFiniteAutomata NFA;
+
+#endif
 

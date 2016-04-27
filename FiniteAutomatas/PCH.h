@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _PCH_H
+#define _PCH_H
 
 #include <assert.h>
 
@@ -14,6 +15,8 @@
 
 #include <iterator>
 #include <algorithm>
+
+using String = std::string;
 
 template <class Type>
 using Vector = std::vector<Type>;
@@ -33,10 +36,5 @@ using Pair = std::pair<Type1, Type2>;
 template <class KeyType, class ValueType>
 using Map = std::map<KeyType, ValueType>;
 
-typedef std::string String;
-typedef Map<Pair<uint32_t, char>, Vector<uint32_t>> TransitionMap;
-typedef Pair<uint32_t, char> TransitionPair;
-
-Vector<Vector<String>> operator+(Vector<Vector<String>> const& vectorOne, Vector<Vector<String>> const& vectorTwo);
-Vector<Vector<String>>& operator+=(Vector<Vector<String>>& vectorOne, Vector<Vector<String>> const& vectorTwo);
+#endif
 

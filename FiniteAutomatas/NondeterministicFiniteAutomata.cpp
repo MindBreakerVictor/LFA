@@ -4,20 +4,24 @@
 NondeterministicFiniteAutomata::NondeterministicFiniteAutomata(std::ifstream& ifs)
 {
 	uint32_t finalStates;
-	ifs >> _states >> _initialState >> finalStates;
-	assert(_states >= 0 && (_initialState >= 0 && _initialState < _states) && (finalStates >= 0 && finalStates <= _states));
 
-	for (uint32_t i = 0; i < finalStates; i++)
+	ifs >> _states >> _initialState >> finalStates;
+
+	assert(_states >= 0 && (_initialState >= 0 && _initialState < _states) 
+		&& (finalStates >= 0 && finalStates <= _states));
+
+	for (uint32_t i = 0; i < finalStates; ++i)
 	{
 		uint32_t finalState;
+
 		ifs >> finalState;
 		_finalStates.push_back(finalState);
 	}
 
 	while (!ifs.eof())
 	{
-		uint32_t currentState, nextState;
 		char key;
+		uint32_t currentState, nextState;
 
 		ifs >> currentState >> key >> nextState;
 
@@ -26,81 +30,80 @@ NondeterministicFiniteAutomata::NondeterministicFiniteAutomata(std::ifstream& if
 
 		if (itr == _transitionFunction.end())
 		{
-			Vector<uint32_t> transitionState;
-			transitionState.push_back(nextState);
-			_transitionFunction.emplace(pair, transitionState);
+			States transitionStates;
+			transitionStates.push_back(nextState);
+			_transitionFunction.emplace(pair, transitionStates);
 		}
 		else
 			itr->second.push_back(nextState);
 	}
 }
 
-bool NondeterministicFiniteAutomata::isAccepted(const String& word) const
+bool NondeterministicFiniteAutomata::IsAccepted(String const& word) const
 {
-	if (!_states || _finalStates.empty() || _transitionFunction.empty())
+	if (!HasStates() || !HasFinalStates() || !HasTransition())
 		return false;
 
-	if (word.empty() && isFinalState(lambdaClosure(_initialState)))
+	if (word.empty() && IsFinalState(LambdaClosure(_initialState)))
 		return true;
 
-	if (ToDFA().isAccepted(word))
+	if (ToDFA().IsAccepted(word))
 		return true;
 
 	return false;
 }
 
-String NondeterministicFiniteAutomata::generateWord(const uint32_t& length) const
+String NondeterministicFiniteAutomata::GenerateWord(uint32_t const& length) const
 {
 	if (!_states || _transitionFunction.empty() || _finalStates.empty() || !length)
 		return String();
 
-	String word = ToDFA().generateWord(length);
-
-	return word;
+	return ToDFA().GenerateWord(length);
 }
 
-String NondeterministicFiniteAutomata::getRegularExpression() const
+String NondeterministicFiniteAutomata::GetRegularExpression() const
 {
-	if (!_states || _transitionFunction.empty() || _finalStates.empty())
+	if (!HasStates() || !HasTransition() || !HasFinalStates())
 		return String();
 
-	String regx = ToDFA().getRegularExpression();
-
-	return regx;
+	return ToDFA().GetRegularExpression();
 }
 
 DFA NondeterministicFiniteAutomata::ToDFA() const
 {
 	// We don't check for finalStates
-	if (!_states || _transitionFunction.empty())
+	if (!HasStates() || !HasTransition())
 		return DFA();
 
-	const Set<char> alphabet = getAlphabet();
-	Vector<Set<uint32_t>> States, FinalStates;
-	Set<uint32_t> InitialState(lambdaClosure(_initialState));
-	Map<Pair<Set<uint32_t>, char>, Set<uint32_t>> TransitionFunction;
+	// Variables to hold the subset version of the DFA.
+	Set<char> const alphabet = GetAlphabet();
+	Vector<StatesSet> States, FinalStates;
+	StatesSet InitialState(LambdaClosure(_initialState));
+	Map<Pair<StatesSet, char>, StatesSet> TransitionFunction;
 	States.push_back(InitialState);
 
+	// Construct TransitionFunction using subset construction.
 	// Cannot use iterator because we constantly add elements in States.
-	for (uint32_t i = 0; i < States.size(); i++)
+	for (uint32_t i = 0; i < States.size(); ++i)
 	{
-		for (Set<char>::const_iterator key = alphabet.begin(); key != alphabet.end(); key++)
+		for (Set<char>::const_iterator key = alphabet.begin(); key != alphabet.end(); ++key)
 		{
-			Set<uint32_t> _state = lambdaClosure(moveTo(States[i], *key));
+			StatesSet _state = LambdaClosure(MoveTo(States[i], *key));
 
 			if ((std::find(States.begin(), States.end(), _state) == States.end()) && !_state.empty())
 				States.push_back(_state);
 
 			if (!_state.empty())
-				TransitionFunction[Pair<Set<uint32_t>, char>(States[i], *key)] = _state;
+				TransitionFunction[Pair<StatesSet, char>(States[i], *key)] = _state;
 		}
 	}
 
-	for (Vector<Set<uint32_t>>::const_iterator itr = States.begin(); itr != States.end(); itr++)
+	// Set final states in the subset version fo the DFA.
+	for (Vector<StatesSet>::const_iterator itr = States.begin(); itr != States.end(); ++itr)
 	{
-		for (Set<uint32_t>::const_iterator _itr = itr->begin(); _itr != itr->end(); _itr++)
+		for (StatesSetConstIterator iter = itr->begin(); iter != itr->end(); ++iter)
 		{
-			if (isFinalState((*_itr)))
+			if (IsFinalState((*iter)))
 			{
 				FinalStates.push_back(*itr);
 				break;
@@ -108,22 +111,24 @@ DFA NondeterministicFiniteAutomata::ToDFA() const
 		}
 	}
 
+	// Variables to hold the DFA.
+	// The new DFA has his states indexed by their index in States.
 	uint32_t states = States.size(), initialState = 0;
 	Vector<uint32_t> finalStates;
 	TransitionMap transitionFunction;
 
-	for (Vector<Set<uint32_t>>::const_iterator itr = FinalStates.begin(); itr != FinalStates.end(); itr++)
+	for (Vector<StatesSet>::const_iterator itr = FinalStates.begin(); itr != FinalStates.end(); ++itr)
 	{
-		for (uint32_t i = 0; i < States.size(); i++)
+		for (uint32_t i = 0; i < States.size(); ++i)
 			if (States[i] == (*itr))
 				finalStates.push_back(i);
 	}
 
-	for (Map<Pair<Set<uint32_t>, char>, Set<uint32_t>>::const_iterator itr = TransitionFunction.begin(); itr != TransitionFunction.end(); itr++)
+	for (Map<Pair<StatesSet, char>, StatesSet>::const_iterator itr = TransitionFunction.begin(); itr != TransitionFunction.end(); ++itr)
 	{
 		uint32_t currentState, nextState;
 
-		for (uint32_t i = 0; i < States.size(); i++)
+		for (uint32_t i = 0; i < States.size(); ++i)
 		{
 			if (States[i] == itr->first.first)
 				currentState = i;
@@ -140,12 +145,12 @@ DFA NondeterministicFiniteAutomata::ToDFA() const
 	return DFA(states, initialState, finalStates, transitionFunction);
 }
 
-Set<uint32_t> NondeterministicFiniteAutomata::lambdaClosure(const uint32_t& state) const
+StatesSet NondeterministicFiniteAutomata::LambdaClosure(uint32_t const& state) const
 {
 	if (state >= _states)
-		return Set<uint32_t>();
+		return StatesSet();
 
-	Set<uint32_t> closure;
+	StatesSet closure;
 	Queue<uint32_t> queue;
 	Vector<bool> visited(_states, false);
 
@@ -156,19 +161,18 @@ Set<uint32_t> NondeterministicFiniteAutomata::lambdaClosure(const uint32_t& stat
 	while (!queue.empty())
 	{
 		uint32_t currentState = queue.front();
-		bool found = false;
 
-		TransitionMap::const_iterator itr = _transitionFunction.find(TransitionPair(currentState, '0'));
+		TransitionMapConstIterator itr = _transitionFunction.find(TransitionPair(currentState, '0'));
 
 		if (itr != _transitionFunction.end())
 		{
-			for (Vector<uint32_t>::const_iterator _itr = itr->second.begin(); _itr != itr->second.end(); _itr++)
+			for (StatesConstIterator iter = itr->second.begin(); iter != itr->second.end(); ++iter)
 			{
-				if (!visited[(*_itr)])
+				if (!visited[(*iter)])
 				{
-					closure.insert((*_itr));
-					queue.push((*_itr));
-					visited[(*_itr)] = true;
+					closure.insert((*iter));
+					queue.push((*iter));
+					visited[(*iter)] = true;
 				}
 			}
 		}
@@ -179,67 +183,67 @@ Set<uint32_t> NondeterministicFiniteAutomata::lambdaClosure(const uint32_t& stat
 	return closure;
 }
 
-Set<uint32_t> NondeterministicFiniteAutomata::lambdaClosure(const Set<uint32_t>& states) const
+StatesSet NondeterministicFiniteAutomata::LambdaClosure(StatesSet const& states) const
 {
 	if (states.empty())
-		return Set<uint32_t>();
+		return StatesSet();
 
-	Set<uint32_t> closure;
+	StatesSet closure;
 
-	for (Set<uint32_t>::const_iterator itr = states.begin(); itr != states.end(); itr++)
+	for (StatesSetConstIterator itr = states.begin(); itr != states.end(); ++itr)
 	{
-		Set<uint32_t> _closure = lambdaClosure(*itr);
+		StatesSet _closure = LambdaClosure(*itr);
 		std::set_union(_closure.begin(), _closure.end(), closure.begin(), closure.end(), std::inserter(closure, closure.begin()));
 	}
 
 	return closure;
 }
 
-Set<uint32_t> NondeterministicFiniteAutomata::moveTo(const uint32_t& state, const char& key) const
+StatesSet NondeterministicFiniteAutomata::MoveTo(uint32_t const& state, char const& key) const
 {
 	if (state >= _states)
-		return Set<uint32_t>();
+		return StatesSet();
 
-	TransitionMap::const_iterator itr = _transitionFunction.find(TransitionPair(state, key));
+	TransitionMapConstIterator itr = _transitionFunction.find(TransitionPair(state, key));
 
 	if (itr != _transitionFunction.end())
 	{
-		Set<uint32_t> closure;
+		StatesSet closure;
 
 		// Should _transitionFunction have value of type set instead of vector?
-		for (Vector<uint32_t>::const_iterator _itr = itr->second.begin(); _itr != itr->second.end(); _itr++)
-			closure.insert(*_itr);
+		for (StatesConstIterator iter = itr->second.begin(); iter != itr->second.end(); ++iter)
+			closure.insert(*iter);
 
 		return closure;
 	}
 
-	return Set<uint32_t>();
+	return StatesSet();
 }
 
-Set<uint32_t> NondeterministicFiniteAutomata::moveTo(const Set<uint32_t>& states, const char& key) const
+StatesSet NondeterministicFiniteAutomata::MoveTo(StatesSet const& states, char const& key) const
 {
 	if (states.empty())
-		return Set<uint32_t>();
+		return StatesSet();
 
-	Set<uint32_t> closure;
+	StatesSet closure;
 
-	for (Set<uint32_t>::const_iterator itr = states.begin(); itr != states.end(); itr++)
+	for (StatesSetConstIterator itr = states.begin(); itr != states.end(); itr++)
 	{
-		Set<uint32_t> _closure = moveTo(*itr, key);
+		StatesSet _closure = MoveTo(*itr, key);
 		std::set_union(_closure.begin(), _closure.end(), closure.begin(), closure.end(), inserter(closure, closure.begin()));
 	}
 
 	return closure;
 }
 
-Set<char> NondeterministicFiniteAutomata::getAlphabet() const
+Set<char> NondeterministicFiniteAutomata::GetAlphabet() const
 {
-	if (!_states || _transitionFunction.empty())
+	if (!HasStates() || !HasTransition())
 		return Set<char>();
 
 	Set<char> alphabet;
 
-	for (TransitionMap::const_iterator itr = _transitionFunction.begin(); itr != _transitionFunction.end(); itr++)
+	for (TransitionMapConstIterator itr = _transitionFunction.begin(); itr != _transitionFunction.end(); itr++)
 		if (itr->first.second != '0')
 			alphabet.insert(itr->first.second);
 

@@ -1,5 +1,6 @@
 #include "PCH.h"
 #include "DeterministicFiniteAutomata.h"
+#include "NondeterministicFiniteAutomata.h"
 
 namespace
 {
@@ -70,9 +71,22 @@ DeterministicFiniteAutomata::DeterministicFiniteAutomata(std::ifstream& ifs)
 	}
 }
 
+void DeterministicFiniteAutomata::Reverse()
+{
+	if (!HasStates() || !HasTransitions() || !HasFinalStates())
+		return;
+
+	DFA reversedDFA = GetReverse().ToDFA();
+
+	_states = reversedDFA._states;
+	_finalStates = reversedDFA._finalStates;
+	_initialState = reversedDFA._initialState;
+	_transitionFunction = reversedDFA._transitionFunction;
+}
+
 bool DeterministicFiniteAutomata::IsAccepted(String const& word) const
 {
-	if (!HasStates() || !HasTransition() || !HasFinalStates())
+	if (!HasStates() || !HasTransitions() || !HasFinalStates())
 		return false;
 
 	uint32_t currentState = _initialState;
@@ -90,10 +104,9 @@ bool DeterministicFiniteAutomata::IsAccepted(String const& word) const
 	return IsFinalState(currentState);
 }
 
-
 String DeterministicFiniteAutomata::GenerateWord(uint32_t const& length) const
 {
-	if (!HasStates() || !HasTransition() || !HasFinalStates() || !length)
+	if (!HasStates() || !HasTransitions() || !HasFinalStates() || !length)
 		return String();
 
 	String word;
@@ -107,7 +120,7 @@ String DeterministicFiniteAutomata::GenerateWord(uint32_t const& length) const
 
 String DeterministicFiniteAutomata::GetRegularExpression() const
 {
-	if (!HasStates() || !HasTransition() || !HasFinalStates())
+	if (!HasStates() || !HasTransitions() || !HasFinalStates())
 		return String();
 
 	Vector<Vector<String>> coefficientsMatrix = GetCoefficientsMatrix();

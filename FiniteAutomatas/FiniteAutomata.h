@@ -11,18 +11,30 @@ using StatesConstIterator = States::const_iterator;
 using StatesSetConstIterator = StatesSet::const_iterator;
 using TransitionMapConstIterator = TransitionMap::const_iterator;
 
+class NondeterministicFiniteAutomata;
+
 class FiniteAutomata
 {
 	public:
-		bool HasStates() const { return (_states != 0) ? true : false; }
-		bool HasFinalStates() const { return !_finalStates.empty(); }
-		bool HasTransition() const { return !_transitionFunction.empty(); }
+		virtual void Reverse() = 0;
+		virtual void RemoveState(uint32_t const& state) final;
+		virtual void RemoveUnreachableStates() final;
+
+		virtual bool HasStates() const final { return (_states != 0) ? true : false; }
+		virtual bool HasFinalStates() const final { return !_finalStates.empty(); }
+		virtual bool HasTransitions() const final { return !_transitionFunction.empty(); }
+
 		virtual bool IsAccepted(String const& word) const = 0;
 
 		virtual String GenerateWord(uint32_t const& length) const = 0;
+
 		virtual String GetRegularExpression() const = 0;
 
 		virtual Vector<bool> GetReachableStates() const final;
+
+		virtual NondeterministicFiniteAutomata GetReverse() const final;
+
+		FiniteAutomata& operator=(FiniteAutomata const& source);
 
 	protected:
 		uint32_t _states;

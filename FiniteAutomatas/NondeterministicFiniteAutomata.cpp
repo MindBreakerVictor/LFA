@@ -39,9 +39,22 @@ NondeterministicFiniteAutomata::NondeterministicFiniteAutomata(std::ifstream& if
 	}
 }
 
+void NondeterministicFiniteAutomata::Reverse()
+{
+	if (!HasStates() || !HasTransitions() || !HasFinalStates())
+		return;
+
+	NFA reversedNFA = GetReverse();
+
+	_states = reversedNFA._states;
+	_finalStates = reversedNFA._finalStates;
+	_initialState = reversedNFA._initialState;
+	_transitionFunction = reversedNFA._transitionFunction;
+}
+
 bool NondeterministicFiniteAutomata::IsAccepted(String const& word) const
 {
-	if (!HasStates() || !HasFinalStates() || !HasTransition())
+	if (!HasStates() || !HasFinalStates() || !HasTransitions())
 		return false;
 
 	if (word.empty() && IsFinalState(LambdaClosure(_initialState)))
@@ -55,7 +68,7 @@ bool NondeterministicFiniteAutomata::IsAccepted(String const& word) const
 
 String NondeterministicFiniteAutomata::GenerateWord(uint32_t const& length) const
 {
-	if (!_states || _transitionFunction.empty() || _finalStates.empty() || !length)
+	if (!HasStates() || !HasTransitions() || !HasFinalStates() || !length)
 		return String();
 
 	return ToDFA().GenerateWord(length);
@@ -63,7 +76,7 @@ String NondeterministicFiniteAutomata::GenerateWord(uint32_t const& length) cons
 
 String NondeterministicFiniteAutomata::GetRegularExpression() const
 {
-	if (!HasStates() || !HasTransition() || !HasFinalStates())
+	if (!HasStates() || !HasTransitions() || !HasFinalStates())
 		return String();
 
 	return ToDFA().GetRegularExpression();
@@ -72,7 +85,7 @@ String NondeterministicFiniteAutomata::GetRegularExpression() const
 DFA NondeterministicFiniteAutomata::ToDFA() const
 {
 	// We don't check for finalStates
-	if (!HasStates() || !HasTransition())
+	if (!HasStates() || !HasTransitions())
 		return DFA();
 
 	// Variables to hold the subset version of the DFA.
@@ -147,9 +160,6 @@ DFA NondeterministicFiniteAutomata::ToDFA() const
 
 StatesSet NondeterministicFiniteAutomata::LambdaClosure(uint32_t const& state) const
 {
-	if (state >= _states)
-		return StatesSet();
-
 	StatesSet closure;
 	Queue<uint32_t> queue;
 	Vector<bool> visited(_states, false);
@@ -201,9 +211,6 @@ StatesSet NondeterministicFiniteAutomata::LambdaClosure(StatesSet const& states)
 
 StatesSet NondeterministicFiniteAutomata::MoveTo(uint32_t const& state, char const& key) const
 {
-	if (state >= _states)
-		return StatesSet();
-
 	TransitionMapConstIterator itr = _transitionFunction.find(TransitionPair(state, key));
 
 	if (itr != _transitionFunction.end())
@@ -238,7 +245,7 @@ StatesSet NondeterministicFiniteAutomata::MoveTo(StatesSet const& states, char c
 
 Set<char> NondeterministicFiniteAutomata::GetAlphabet() const
 {
-	if (!HasStates() || !HasTransition())
+	if (!HasStates() || !HasTransitions())
 		return Set<char>();
 
 	Set<char> alphabet;

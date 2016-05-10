@@ -15,6 +15,8 @@ class NondeterministicFiniteAutomata : public FiniteAutomata
 			Vector<uint32_t> const& finalStates, TransitionMap const& transitionFunction) : 
 			FiniteAutomata(states, initialState, finalStates, transitionFunction) { }
 
+		void Reverse() override;
+
 		bool IsAccepted(String const& word) const override;
 
 		String GenerateWord(uint32_t const& length) const override;

@@ -20,6 +20,8 @@ class FiniteAutomata
 		virtual void RemoveState(uint32_t const& state) final;
 		virtual void RemoveUnreachableStates() final;
 
+		virtual void Minimize();
+
 		virtual bool HasStates() const final { return (_states != 0) ? true : false; }
 		virtual bool HasFinalStates() const final { return !_finalStates.empty(); }
 		virtual bool HasTransitions() const final { return !_transitionFunction.empty(); }

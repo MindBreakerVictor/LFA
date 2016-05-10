@@ -75,6 +75,17 @@ void FiniteAutomata::RemoveUnreachableStates()
 			RemoveState(i);
 }
 
+void FiniteAutomata::Minimize()
+{
+	// This methods is using Brzozowski's algorithm.
+	// Reverses a FA(either deterministic or nondeterministic)
+	// then converts it to a DFA and then reverses it again.
+	// This will a produce a minimal DFA for sure.
+	// It can be used for NFA even if it produces a DFA.
+	// NFAs are extensions of DFAs.
+	*this = GetReverse().ToDFA().GetReverse();
+}
+
 Vector<bool> FiniteAutomata::GetReachableStates() const
 {
 	if (!HasStates())

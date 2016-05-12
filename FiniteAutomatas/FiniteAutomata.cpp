@@ -83,7 +83,7 @@ void FiniteAutomata::Minimize()
 	// This will a produce a minimal DFA for sure.
 	// It can be used for NFA even if it produces a DFA.
 	// NFAs are extensions of DFAs.
-	*this = GetReverse().ToDFA().GetReverse();
+	*this = GetReverse().ToDFA().GetReverse().ToDFA();
 }
 
 Vector<bool> FiniteAutomata::GetReachableStates() const

@@ -103,9 +103,11 @@ DFA NondeterministicFiniteAutomata::ToDFA() const
 		{
 			StatesSet _state = LambdaClosure(MoveTo(States[i], *key));
 
-			if (!_state.empty() && std::find(States.begin(), States.end(), _state) == States.end())
+			if (!_state.empty())
 			{
-				States.push_back(_state);
+				if (std::find(States.begin(), States.end(), _state) == States.end())
+					States.push_back(_state);
+
 				TransitionFunction[Pair<StatesSet, char>(States[i], *key)] = _state;
 			}
 		}

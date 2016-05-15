@@ -30,8 +30,6 @@ class NondeterministicFiniteAutomata : public FiniteAutomata
 
 		StatesSet MoveTo(uint32_t const& state, char const& key) const;
 		StatesSet MoveTo(StatesSet const& states, char const& key) const;
-
-		Set<char> GetAlphabet() const;
 };
 
 typedef NondeterministicFiniteAutomata NFA;

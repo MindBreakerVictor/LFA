@@ -103,15 +103,15 @@ DFA NondeterministicFiniteAutomata::ToDFA() const
 		{
 			StatesSet _state = LambdaClosure(MoveTo(States[i], *key));
 
-			if ((std::find(States.begin(), States.end(), _state) == States.end()) && !_state.empty())
+			if (!_state.empty() && std::find(States.begin(), States.end(), _state) == States.end())
+			{
 				States.push_back(_state);
-
-			if (!_state.empty())
 				TransitionFunction[Pair<StatesSet, char>(States[i], *key)] = _state;
+			}
 		}
 	}
 
-	// Set final states in the subset version fo the DFA.
+	// Set final states in the subset version of the DFA.
 	for (Vector<StatesSet>::const_iterator itr = States.begin(); itr != States.end(); ++itr)
 	{
 		for (StatesSetConstIterator iter = itr->begin(); iter != itr->end(); ++iter)
@@ -217,7 +217,6 @@ StatesSet NondeterministicFiniteAutomata::MoveTo(uint32_t const& state, char con
 	{
 		StatesSet closure;
 
-		// Should _transitionFunction have value of type set instead of vector?
 		for (StatesConstIterator iter = itr->second.begin(); iter != itr->second.end(); ++iter)
 			closure.insert(*iter);
 
@@ -234,26 +233,12 @@ StatesSet NondeterministicFiniteAutomata::MoveTo(StatesSet const& states, char c
 
 	StatesSet closure;
 
-	for (StatesSetConstIterator itr = states.begin(); itr != states.end(); itr++)
+	for (StatesSetConstIterator itr = states.begin(); itr != states.end(); ++itr)
 	{
 		StatesSet _closure = MoveTo(*itr, key);
 		std::set_union(_closure.begin(), _closure.end(), closure.begin(), closure.end(), inserter(closure, closure.begin()));
 	}
 
 	return closure;
-}
-
-Set<char> NondeterministicFiniteAutomata::GetAlphabet() const
-{
-	if (!HasStates() || !HasTransitions())
-		return Set<char>();
-
-	Set<char> alphabet;
-
-	for (TransitionMapConstIterator itr = _transitionFunction.begin(); itr != _transitionFunction.end(); itr++)
-		if (itr->first.second != '0')
-			alphabet.insert(itr->first.second);
-
-	return alphabet;
 }
 

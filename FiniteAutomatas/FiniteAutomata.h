@@ -32,6 +32,8 @@ class FiniteAutomata
 
 		virtual String GetRegularExpression() const = 0;
 
+		virtual Set<char> GetAlphabet() const final;
+
 		virtual Vector<bool> GetReachableStates() const final;
 
 		virtual NondeterministicFiniteAutomata GetReverse() const final;

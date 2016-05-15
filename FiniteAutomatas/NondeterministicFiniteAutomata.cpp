@@ -124,7 +124,7 @@ DFA NondeterministicFiniteAutomata::ToDFA() const
 
 	// Variables to hold the DFA.
 	// The new DFA has his states indexed by their index in States.
-	uint32_t states = States.size(), initialState = 0;
+	uint32_t states = static_cast<uint32_t>(States.size()), initialState = 0;
 	Vector<uint32_t> finalStates;
 	TransitionMap transitionFunction;
 

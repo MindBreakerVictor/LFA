@@ -29,11 +29,7 @@ NondeterministicFiniteAutomata::NondeterministicFiniteAutomata(std::ifstream& if
 		TransitionMap::iterator itr = _transitionFunction.find(pair);
 
 		if (itr == _transitionFunction.end())
-		{
-			States transitionStates;
-			transitionStates.push_back(nextState);
-			_transitionFunction.emplace(pair, transitionStates);
-		}
+			_transitionFunction.emplace(pair, States({ nextState }));
 		else
 			itr->second.push_back(nextState);
 	}
@@ -152,9 +148,7 @@ DFA NondeterministicFiniteAutomata::ToDFA() const
 				nextState = i;
 		}
 
-		Vector<uint32_t> transitionState;
-		transitionState.push_back(nextState);
-		transitionFunction.emplace(TransitionPair(currentState, itr->first.second), transitionState);
+		transitionFunction.emplace(TransitionPair(currentState, itr->first.second), Vector<uint32_t>({ nextState }));
 	}
 
 	return DFA(states, initialState, finalStates, transitionFunction);

@@ -16,11 +16,15 @@ class DeterministicFiniteAutomata : public FiniteAutomata
 			FiniteAutomata(states, initialState, finalStates, transitionFunction) { }
 
 		void Reverse() override;
+		
+		void Minimize() override;
 
 		bool IsAccepted(String const& word) const override;
 
 		String GenerateWord(uint32_t const& length) const override;
 		String GetRegularExpression() const override;
+
+		Vector<Vector<bool>> GetEquivalenceMatrix() const;
 
 		Vector<Vector<String>> GetCoefficientsMatrix() const;
 		Vector<Vector<String>> GetFreeTermsMatrix() const;
@@ -34,6 +38,11 @@ class DeterministicFiniteAutomata : public FiniteAutomata
 		void ApplyArdensLemma(String const& regex, String* freeTerm) const;
 		void EliminateState(uint32_t const& index, 
 			Vector<Vector<String>>* coefficientsMatrix,	Vector<Vector<String>>* freeTermsMatrix) const;
+
+		// Used in Minimize
+		Vector<Pair<StatesSet, bool>> BuildMinimalStates() const;
+		Pair<StatesSet, bool> MoveTo(Vector<Pair<StatesSet, bool>> const& powerSetStates, 
+			Pair<StatesSet, bool> const& states, char const& key) const;
 };
 
 typedef DeterministicFiniteAutomata DFA;

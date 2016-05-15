@@ -59,15 +59,13 @@ DeterministicFiniteAutomata::DeterministicFiniteAutomata(std::ifstream& ifs)
 	{
 		char key;
 		uint32_t currentState, nextState;
-		States transitionState;
 
 		ifs >> currentState >> key >> nextState;
 		
 		// Check for lambda transition
 		assert(key != '0');
 
-		transitionState.push_back(nextState);
-		_transitionFunction.emplace(TransitionPair(currentState, key), transitionState);
+		_transitionFunction.emplace(TransitionPair(currentState, key), States({ nextState }));
 	}
 }
 
@@ -82,6 +80,66 @@ void DeterministicFiniteAutomata::Reverse()
 	_finalStates = reversedDFA._finalStates;
 	_initialState = reversedDFA._initialState;
 	_transitionFunction = reversedDFA._transitionFunction;
+}
+
+void DeterministicFiniteAutomata::Minimize()
+{
+	if (!HasStates() || !HasTransitions() || !HasFinalStates())
+		return;
+
+	States FinalStates;
+	TransitionMap transitionFunction;
+	Map<Pair<Pair<StatesSet, bool>, char>, Pair<StatesSet, bool>> TransitionFunction;
+
+	Set<char> alphabet = GetAlphabet();
+	Vector<Pair<StatesSet, bool>> states = BuildMinimalStates();
+
+	// Build transition function and final state 
+	// for minimal dfa. States are power sets from 
+	// the states of the dfa.
+	for (uint32_t i = 0; i < states.size(); ++i)
+	{
+		for (Set<char>::const_iterator key = alphabet.begin(); key != alphabet.end(); ++key)
+		{
+			Pair<StatesSet, bool> state = MoveTo(states, states[i], *key);
+
+			if (!state.first.empty())
+				TransitionFunction[Pair<Pair<StatesSet, bool>, char>(states[i], *key)] = state;
+		}
+
+		if (states[i].second)
+			FinalStates.push_back(i);
+	}
+
+	// Convert the power set states in simple states.
+	Map<Pair<Pair<StatesSet, bool>, char>, Pair<StatesSet, bool>>::const_iterator itr;
+	for (itr = TransitionFunction.begin(); itr != TransitionFunction.end(); ++itr)
+	{
+		uint8_t found = 0;
+		uint32_t currentState, nextState;
+
+		for (uint32_t i = 0; i < states.size() && found != 2; ++i)
+		{
+			if (states[i] == itr->first.first)
+			{
+				currentState = i;
+				found++;
+			}
+
+			if (states[i] == itr->second)
+			{
+				nextState = i;
+				found++;
+			}
+		}
+
+		transitionFunction.emplace(TransitionPair(currentState, itr->first.second), Vector<uint32_t>({ nextState }));
+	}
+
+	// Set dfa properties to minimal dfa properties.
+	_transitionFunction = transitionFunction;
+	_finalStates = FinalStates;
+	_states = static_cast<uint32_t>(states.size());
 }
 
 bool DeterministicFiniteAutomata::IsAccepted(String const& word) const
@@ -136,6 +194,62 @@ String DeterministicFiniteAutomata::GetRegularExpression() const
 	}
 
 	return freeTermsMatrix[0][0];
+}
+
+Vector<Vector<bool>> DeterministicFiniteAutomata::GetEquivalenceMatrix() const
+{
+	if (!HasStates() || !HasTransitions() || !HasFinalStates())
+		return Vector<Vector<bool>>();
+
+	Vector<Vector<bool>> distinct(_states, Vector<bool>(_states, false));
+	Vector<Pair<uint32_t, uint32_t>> visited;
+
+	for (uint32_t i = 0; i < _finalStates.size(); ++i)
+	{
+		for (uint32_t j = 0; j < _finalStates[i]; ++j)
+			if (!IsFinalState(j))
+			{
+				distinct[_finalStates[i]][j] = true;
+				distinct[j][_finalStates[i]] = true;
+				visited.push_back(std::make_pair(j, _finalStates[i]));
+			}
+	}
+
+	Set<char> alphabet = GetAlphabet();
+
+	for (uint32_t i = 0; i < visited.size(); ++i)
+	{
+		for (Set<char>::const_iterator key = alphabet.begin(); key != alphabet.end(); ++key)
+		{
+			for (uint32_t firstState = 0; firstState < _states; ++firstState)
+			{
+				TransitionMapConstIterator firstTransition = _transitionFunction.find(TransitionPair(firstState, *key));
+
+				if (firstTransition == _transitionFunction.end())
+					continue;
+
+				if (firstTransition->second.front() != visited[i].first)
+					continue;
+
+				for (uint32_t secondState = 0; secondState < _states; ++secondState)
+				{
+					TransitionMapConstIterator secondTransition = _transitionFunction.find(TransitionPair(secondState, *key));
+
+					if (secondTransition == _transitionFunction.end())
+						continue;
+
+					if ((secondTransition->second.front() != visited[i].second) || distinct[firstState][secondState])
+						continue;
+
+					visited.push_back(std::make_pair(firstState, secondState));
+					distinct[firstState][secondState] = true;
+					distinct[secondState][firstState] = true;
+				}
+			}
+		}
+	}
+
+	return distinct;
 }
 
 Vector<Vector<String>> DeterministicFiniteAutomata::GetCoefficientsMatrix() const
@@ -242,5 +356,84 @@ void DeterministicFiniteAutomata::EliminateState(uint32_t const& index,
 			}
 
 	(*freeTermsMatrix) += _B;
+}
+
+Vector<Pair<StatesSet, bool>> DeterministicFiniteAutomata::BuildMinimalStates() const
+{
+	Vector<bool> marked(_states, false);
+	Vector<Pair<StatesSet, bool>> states;
+	Vector<Vector<bool>> distinct = GetEquivalenceMatrix();
+
+	for (uint32_t i = 0; i < distinct.size(); ++i)
+	{
+		if (marked[i])
+			continue;
+
+		marked[i] = true;
+
+		bool final = false;
+
+		StatesSet powerSet = { i };
+
+		if (IsFinalState(i))
+			final = true;
+
+		for (uint32_t j = i + 1; j < distinct.size(); ++j)
+			if (!distinct[j][i])
+			{
+				powerSet.insert(j);
+				marked[j] = true;
+
+				if (!final && IsFinalState(j))
+					final = true;
+			}
+
+		states.push_back(std::make_pair(powerSet, final));
+	}
+
+	return states;
+}
+
+Pair<StatesSet, bool> DeterministicFiniteAutomata::MoveTo(Vector<Pair<StatesSet, bool>> const& powerSetStates, 
+	Pair<StatesSet, bool> const& states, char const& key) const
+{
+	if (states.first.empty())
+		return Pair<StatesSet, bool>();
+
+	bool final = false;
+	StatesSet closure;
+
+	for (StatesSetConstIterator itr = states.first.begin(); itr != states.first.end(); ++itr)
+	{
+		TransitionMapConstIterator iter = _transitionFunction.find(TransitionPair(*itr, key));
+
+		if (iter != _transitionFunction.end())
+		{
+			closure.insert(iter->second.front());
+
+			if (!final && IsFinalState(iter->second.front()))
+				final = true;
+		}
+	}
+
+	if (closure.empty())
+		return Pair<StatesSet, bool>();
+
+	// Look for it in powerSetStates
+	// closure is not guaranteed in powerSetStates
+	// it may be just a power set of a state from powerSetStates.
+	
+	// It is in powerSetStates.
+	Vector<Pair<StatesSet, bool>>::const_iterator itr;
+	for (itr = powerSetStates.begin(); itr != powerSetStates.end(); ++itr)
+		if (itr->first == closure)
+			return Pair<StatesSet, bool>(closure, final);
+
+	// closure is just a power set of state from powerSetStates.
+	for (uint32_t i = 0; i < powerSetStates.size(); ++i)
+		if (std::find(powerSetStates[i].first.begin(), powerSetStates[i].first.end(), *(closure.begin())) != powerSetStates[i].first.end())
+			return powerSetStates[i];
+
+	return Pair<StatesSet, bool>();
 }
 

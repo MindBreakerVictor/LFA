@@ -3,16 +3,16 @@
 
 NondeterministicFiniteAutomata::NondeterministicFiniteAutomata(std::ifstream& ifs)
 {
-	uint32_t finalStates;
+	uint32 finalStates;
 
 	ifs >> _states >> _initialState >> finalStates;
 
 	assert(_states >= 0 && (_initialState >= 0 && _initialState < _states) 
 		&& (finalStates >= 0 && finalStates <= _states));
 
-	for (uint32_t i = 0; i < finalStates; ++i)
+	for (uint32 i = 0; i < finalStates; ++i)
 	{
-		uint32_t finalState;
+		uint32 finalState;
 
 		ifs >> finalState;
 		_finalStates.push_back(finalState);
@@ -21,7 +21,7 @@ NondeterministicFiniteAutomata::NondeterministicFiniteAutomata(std::ifstream& if
 	while (!ifs.eof())
 	{
 		char key;
-		uint32_t currentState, nextState;
+		uint32 currentState, nextState;
 
 		ifs >> currentState >> key >> nextState;
 
@@ -29,7 +29,7 @@ NondeterministicFiniteAutomata::NondeterministicFiniteAutomata(std::ifstream& if
 		TransitionMap::iterator itr = _transitionFunction.find(pair);
 
 		if (itr == _transitionFunction.end())
-			_transitionFunction.emplace(pair, States({ nextState }));
+			_transitionFunction.emplace(pair, StatesVector({ nextState }));
 		else
 			itr->second.push_back(nextState);
 	}
@@ -62,20 +62,12 @@ bool NondeterministicFiniteAutomata::IsAccepted(String const& word) const
 	return false;
 }
 
-String NondeterministicFiniteAutomata::GenerateWord(uint32_t const& length) const
+String NondeterministicFiniteAutomata::GenerateWord(uint32 const& length) const
 {
 	if (!HasStates() || !HasTransitions() || !HasFinalStates() || !length)
 		return String();
 
 	return ToDFA().GenerateWord(length);
-}
-
-String NondeterministicFiniteAutomata::GetRegularExpression() const
-{
-	if (!HasStates() || !HasTransitions() || !HasFinalStates())
-		return String();
-
-	return ToDFA().GetRegularExpression();
 }
 
 DFA NondeterministicFiniteAutomata::ToDFA() const
@@ -93,7 +85,7 @@ DFA NondeterministicFiniteAutomata::ToDFA() const
 
 	// Construct TransitionFunction using subset construction.
 	// Cannot use iterator because we constantly add elements in States.
-	for (uint32_t i = 0; i < States.size(); ++i)
+	for (uint32 i = 0; i < States.size(); ++i)
 	{
 		for (Set<char>::const_iterator key = alphabet.begin(); key != alphabet.end(); ++key)
 		{
@@ -124,40 +116,48 @@ DFA NondeterministicFiniteAutomata::ToDFA() const
 
 	// Variables to hold the DFA.
 	// The new DFA has his states indexed by their index in States.
-	uint32_t states = static_cast<uint32_t>(States.size()), initialState = 0;
-	Vector<uint32_t> finalStates;
+	uint32 states = static_cast<uint32>(States.size()), initialState = 0;
+	StatesVector finalStates;
 	TransitionMap transitionFunction;
 
 	for (Vector<StatesSet>::const_iterator itr = FinalStates.begin(); itr != FinalStates.end(); ++itr)
 	{
-		for (uint32_t i = 0; i < States.size(); ++i)
+		for (uint32 i = 0; i < States.size(); ++i)
 			if (States[i] == (*itr))
 				finalStates.push_back(i);
 	}
 
 	for (Map<Pair<StatesSet, char>, StatesSet>::const_iterator itr = TransitionFunction.begin(); itr != TransitionFunction.end(); ++itr)
 	{
-		uint32_t currentState, nextState;
+		uint8 found = 0;
+		uint32 currentState = 0, nextState = 0;	// Initialize them to remove warning.
 
-		for (uint32_t i = 0; i < States.size(); ++i)
+		for (uint32 i = 0; i < States.size() && found != 2; ++i)
 		{
 			if (States[i] == itr->first.first)
+			{
 				currentState = i;
+				++found;
+			}
 
 			if (States[i] == itr->second)
+			{
 				nextState = i;
+				++found;
+			}
 		}
 
-		transitionFunction.emplace(TransitionPair(currentState, itr->first.second), Vector<uint32_t>({ nextState }));
+		if (found == 2)
+			transitionFunction.emplace(TransitionPair(currentState, itr->first.second), StatesVector({ nextState }));
 	}
 
 	return DFA(states, initialState, finalStates, transitionFunction);
 }
 
-StatesSet NondeterministicFiniteAutomata::LambdaClosure(uint32_t const& state) const
+StatesSet NondeterministicFiniteAutomata::LambdaClosure(uint32 const& state) const
 {
 	StatesSet closure;
-	Queue<uint32_t> queue;
+	Queue<uint32> queue;
 	Vector<bool> visited(_states, false);
 
 	queue.push(state);
@@ -166,7 +166,7 @@ StatesSet NondeterministicFiniteAutomata::LambdaClosure(uint32_t const& state) c
 
 	while (!queue.empty())
 	{
-		uint32_t currentState = queue.front();
+		uint32 currentState = queue.front();
 
 		TransitionMapConstIterator itr = _transitionFunction.find(TransitionPair(currentState, '0'));
 
@@ -205,7 +205,7 @@ StatesSet NondeterministicFiniteAutomata::LambdaClosure(StatesSet const& states)
 	return closure;
 }
 
-StatesSet NondeterministicFiniteAutomata::MoveTo(uint32_t const& state, char const& key) const
+StatesSet NondeterministicFiniteAutomata::MoveTo(uint32 const& state, char const& key) const
 {
 	TransitionMapConstIterator itr = _transitionFunction.find(TransitionPair(state, key));
 

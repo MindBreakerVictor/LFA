@@ -2,7 +2,7 @@
 #include "FiniteAutomata.h"
 #include "NondeterministicFiniteAutomata.h"
 
-void FiniteAutomata::RemoveState(uint32_t const& state)
+void FiniteAutomata::RemoveState(uint32 const& state)
 {
 	if (!HasStates())
 		return;
@@ -70,7 +70,7 @@ void FiniteAutomata::RemoveUnreachableStates()
 
 	Vector<bool> reachableStates = GetReachableStates();
 
-	for (uint32_t i = 0; i < reachableStates.size(); ++i)
+	for (uint32 i = 0; i < reachableStates.size(); ++i)
 		if (!reachableStates[i])
 			RemoveState(i);
 }
@@ -85,6 +85,34 @@ void FiniteAutomata::Minimize()
 	*this = GetReverse().ToDFA().GetReverse().ToDFA();
 }
 
+StatesSet FiniteAutomata::GetInconclusiveStates() const
+{
+	if (!HasStates())
+		return StatesSet();
+
+	StatesSet inconclusiveStates;
+
+	// We iterate through transition map in case states we're removed from the automaton.
+	for (TransitionMapConstIterator itr = _transitionFunction.cbegin(); itr != _transitionFunction.cend(); ++itr)
+		if (!IsFinalState(itr->first.first))
+			inconclusiveStates.insert(itr->first.first);
+
+	return inconclusiveStates;
+}
+
+StatesSet FiniteAutomata::GetFinalStates() const
+{
+	if (!HasFinalStates())
+		return StatesSet();
+
+	StatesSet finalStates;
+
+	for (StatesConstIterator itr = _finalStates.cbegin(); itr != _finalStates.cend(); ++itr)
+		finalStates.insert(*itr);
+
+	return finalStates;
+}
+
 Set<char> FiniteAutomata::GetAlphabet() const
 {
 	if (!HasStates() || !HasTransitions())
@@ -92,7 +120,7 @@ Set<char> FiniteAutomata::GetAlphabet() const
 
 	Set<char> alphabet;
 
-	for (TransitionMapConstIterator itr = _transitionFunction.begin(); itr != _transitionFunction.end(); itr++)
+	for (TransitionMapConstIterator itr = _transitionFunction.begin(); itr != _transitionFunction.end(); ++itr)
 		if (itr->first.second != '0')
 			alphabet.insert(itr->first.second);
 
@@ -104,7 +132,7 @@ Vector<bool> FiniteAutomata::GetReachableStates() const
 	if (!HasStates())
 		return Vector<bool>();
 
-	Stack<uint32_t> stack;
+	Stack<uint32> stack;
 	Vector<bool> visited(_states, false);
 	
 	stack.push(_initialState);
@@ -112,7 +140,7 @@ Vector<bool> FiniteAutomata::GetReachableStates() const
 
 	while (!stack.empty())
 	{
-		uint32_t currentState = stack.top();
+		uint32 currentState = stack.top();
 		bool found = false;
 
 		for (TransitionMapConstIterator itr = _transitionFunction.begin(); itr != _transitionFunction.end() && !found; ++itr)
@@ -133,7 +161,7 @@ Vector<bool> FiniteAutomata::GetReachableStates() const
 	return visited;
 }
 
-bool FiniteAutomata::IsFinalState(uint32_t const& state) const
+bool FiniteAutomata::IsFinalState(uint32 const& state) const
 {
 	if (!HasStates() || !HasFinalStates())
 		return false;
@@ -162,8 +190,8 @@ NFA FiniteAutomata::GetReverse() const
 	if (!HasStates() || !HasTransitions() || !HasFinalStates())
 		return NFA();
 
-	uint32_t initialState;
-	States finalStates;
+	uint32 initialState;
+	StatesVector finalStates;
 	TransitionMap transitionFunction;
 
 	// Reverse transitions
@@ -176,7 +204,7 @@ NFA FiniteAutomata::GetReverse() const
 
 			if (iterator == transitionFunction.end())
 			{
-				States transitionStates;
+				StatesVector transitionStates;
 				transitionStates.push_back(itr->first.first);
 				transitionFunction.emplace(pair, transitionStates);
 			}

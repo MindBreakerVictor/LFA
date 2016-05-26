@@ -1,15 +1,15 @@
-#ifndef _FINITE_AUTOMATA_H
-#define _FINITE_AUTOMATA_H
+#ifndef LFA_LIB_FINITE_AUTOMATA_H
+#define LFA_LIB_FINITE_AUTOMATA_H
 
 #include "PCH.h"
 
-using States = Vector<uint32_t>;
-using StatesSet = Set<uint32_t>;
-using TransitionPair = Pair<uint32_t, char>;
-using TransitionMap =  Map<TransitionPair, States>;
-using StatesConstIterator = States::const_iterator;
-using StatesSetConstIterator = StatesSet::const_iterator;
-using TransitionMapConstIterator = TransitionMap::const_iterator;
+typedef Set<uint32> StatesSet;
+typedef Vector<uint32> StatesVector;
+typedef Pair<uint32, char> TransitionPair;
+typedef Map<TransitionPair, StatesVector> TransitionMap;
+typedef StatesVector::const_iterator StatesConstIterator;
+typedef StatesSet::const_iterator StatesSetConstIterator;
+typedef TransitionMap::const_iterator TransitionMapConstIterator;
 
 class NondeterministicFiniteAutomata;
 
@@ -17,44 +17,45 @@ class FiniteAutomata
 {
 	public:
 		virtual void Reverse() = 0;
-		virtual void RemoveState(uint32_t const& state) final;
-		virtual void RemoveUnreachableStates() final;
+		void RemoveState(uint32 const& state);
+		void RemoveUnreachableStates();
 
-		virtual void Minimize();
-
-		virtual bool HasStates() const final { return (_states != 0) ? true : false; }
-		virtual bool HasFinalStates() const final { return !_finalStates.empty(); }
-		virtual bool HasTransitions() const final { return !_transitionFunction.empty(); }
+		bool HasStates() const { return (_states != 0) ? true : false; }
+		bool HasFinalStates() const { return !_finalStates.empty(); }
+		bool HasTransitions() const { return !_transitionFunction.empty(); }
 
 		virtual bool IsAccepted(String const& word) const = 0;
 
-		virtual String GenerateWord(uint32_t const& length) const = 0;
+		virtual String GenerateWord(uint32 const& length) const = 0;
 
-		virtual String GetRegularExpression() const = 0;
+		virtual void Minimize();
 
-		virtual Set<char> GetAlphabet() const final;
+		StatesSet GetInconclusiveStates() const;
+		StatesSet GetFinalStates() const;
 
-		virtual Vector<bool> GetReachableStates() const final;
+		Set<char> GetAlphabet() const;
 
-		virtual NondeterministicFiniteAutomata GetReverse() const final;
+		Vector<bool> GetReachableStates() const;
+
+		NondeterministicFiniteAutomata GetReverse() const;
 
 		FiniteAutomata& operator=(FiniteAutomata const& source);
 
 	protected:
-		uint32_t _states;
-		uint32_t _initialState;
-		States _finalStates;
+		uint32 _states;
+		uint32 _initialState;
+		StatesVector _finalStates;
 		TransitionMap _transitionFunction;
 
 		FiniteAutomata() { }
 		FiniteAutomata(FiniteAutomata const& source) : _states(source._states), _initialState(source._initialState),
 			_finalStates(source._finalStates), _transitionFunction(source._transitionFunction) { }
-		FiniteAutomata(uint32_t const& states, uint32_t const& initialState, 
-			States const& finalStates, TransitionMap const& transitionFunction) : 
+		FiniteAutomata(uint32 const& states, uint32 const& initialState, 
+			StatesVector const& finalStates, TransitionMap const& transitionFunction) : 
 			_states(states), _initialState(initialState), _finalStates(finalStates), 
 			_transitionFunction(transitionFunction) { }
 
-		bool IsFinalState(uint32_t const& state) const;
+		bool IsFinalState(uint32 const& state) const;
 		bool IsFinalState(StatesSet const& state) const;
 };
 
